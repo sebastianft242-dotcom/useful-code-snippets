@@ -1,0 +1,36 @@
+def remove_background(surface):
+    """Erases the white/gray checkerboard background from the edges inward."""
+    # Scale to a medium size first so the flood-fill is fast and accurate
+    temp_surface = pygame.transform.scale(surface.convert_alpha(), (256, 256))
+    w, h = temp_surface.get_size()
+    visited = set()
+
+    # Start checking from the outer borders of the image
+    stack = (
+        [(x, 0) for x in range(w)]
+        + [(x, h - 1) for x in range(w)]
+        + [(0, y) for y in range(h)]
+        + [(w - 1, y) for y in range(h)]
+    )
+
+    while stack:
+        x, y = stack.pop()
+        if (x, y) in visited:
+            continue
+        visited.add((x, y))
+
+        r, g, b, a = temp_surface.get_at((x, y))
+        # Check if the pixel is neutral white or gray (the checkerboard)
+        if (
+            r > 140
+            and g > 140
+            and b > 140
+            and abs(r - g) < 30
+            and abs(g - b) < 30
+        ):
+            temp_surface.set_at((x, y), (0, 0, 0, 0))  # Make pixel transparent
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in visited:
+                    stack.append((nx, ny))
+
+    return temp_surface
